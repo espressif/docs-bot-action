@@ -9,24 +9,30 @@ inputs:
     required: true
   title:
     description: Issue title.
-    required: true
+    required: false
+    default: ''
   bot_query_prefix:
     description: The issue message can be prefixed with this string before evaluation.
     required: false
     default: >
       The customer opened a Github issue with the following information. Please help and I'll post your answer there.
+  github_comments:
+    description: If set to false, the bot will not post a reply to the issue.
+    default: true
+    required: false
   github_token:
     description: Access token for the repository when the workflow is run. It will be used by the bot to post a reply.
-    required: true
+    required: false
   github_repository:
     description: Repository where the workflow is run.
-    required: true
+    required: false
   github_issue_number:
     description: Issue number in the repository from where in_msg is coming from.
-    required: true
+    required: false
   prefix_out_msg:
     description: Post this message together with the bot's response. Can be used for warnings, disclaimers and similar.
-    required: true
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -69,7 +75,17 @@ runs:
         printf "\n---\n" >> output.txt
         python bot_action/bot_action.py input.txt >> output.txt || exit 1
 
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: text-files
+        retention-days: 5
+        path: |
+          output.txt
+          input.txt
+
     - name: Comment
+      if: ${{ inputs.github_comments == true }}
       shell: bash
       run: |
         # --edit-last will fail if there is no previous comment by the bot. See https://github.com/cli/cli/issues/10370

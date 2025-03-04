@@ -1,0 +1,29 @@
+---
+name: Manual test run
+
+on:
+  workflow_dispatch:
+    inputs:
+      bot_query:
+        description: Pass this message to the bot.
+        required: true
+
+jobs:
+  manual_run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run action
+        if: ${{ github.repository_owner == 'espressif' }}
+        uses: ./
+        env:
+          # the secrets in this repository are for testing purposes only and are not the same as in repository the
+          # action is deployed
+          BOT_API_KEY: ${{ secrets.BOT_API_KEY }}
+          BOT_INTEGRATION_ID: ${{ secrets.BOT_INTEGRATION_ID }}
+          BOT_API_ENDPOINT: ${{ secrets.BOT_API_ENDPOINT }}
+        with:
+          in_msg: ${{ github.event.inputs.bot_query }}
+          github_comments: false
