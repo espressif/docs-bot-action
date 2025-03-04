@@ -1,3 +1,6 @@
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/espressif/docs-bot-action/master.svg)](https://results.pre-commit.ci/latest/github/espressif/docs-bot-action/master)
+
+
 # Github Action for replying to issues
 
 This action is limited to the `espressif` Github namespace and cannot be used outside of this organization.
