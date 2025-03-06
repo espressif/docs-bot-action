@@ -87,7 +87,7 @@ runs:
           input.txt
 
     - name: Comment
-      if: ${{ inputs.github_comments == true }}
+      if: ${{ inputs.github_comments == 'true' }}
       shell: bash
       run: |
         # --edit-last will fail if there is no previous comment by the bot. See https://github.com/cli/cli/issues/10370
