@@ -68,9 +68,11 @@ runs:
       id: bot-action
       run: |
         source venv/bin/activate
-        printf "%s\n" "${{ inputs.bot_query_prefix }}" > input.txt
-        printf "%s\n" "${{ inputs.title }}" >> input.txt
-        printf "%s\n" "${{ inputs.in_msg }}" >> input.txt
+        cat << 'EOF' > input.txt
+        ${{ inputs.bot_query_prefix }}
+        ${{ inputs.title }}
+        ${{ inputs.in_msg }}
+        EOF
         printf "%s\n" "${{ inputs.prefix_out_msg }}" > output.txt
         printf "\n---\n" >> output.txt
         python bot_action/bot_action.py input.txt >> output.txt || exit 1
