@@ -18,11 +18,31 @@ request overhead.
 QUERY_LIMIT = 14000
 
 
-def get_suggestion(issue_body: str) -> str:
-    payload = json.dumps({'integration_id': os.environ['BOT_INTEGRATION_ID'], 'query': issue_body})
+def get_suggestion(query: str, instructions: str, behavior: str) -> str:
+    payload = json.dumps(
+        {
+            'integration_id': os.environ['BOT_INTEGRATION_ID'],
+            'messages': [
+                {'role': 'system', 'content': behavior},
+                {'role': 'context'},
+                {'role': 'user', 'content': instructions},
+                {'role': 'query', 'content': query},
+                {
+                    'role': 'user',
+                    'content': 'Output your response in Github markdown. Sign it as "Espressif Bot".',
+                },
+            ],
+        }
+    )
+
+    endpoint = os.environ['BOT_API_ENDPOINT']
+
+    if endpoint.endswith('chat/'):
+        # Switch to "custom chat" feature if the URL is for simple chat
+        endpoint = f'{endpoint}custom/'
 
     headers = {'content-type': 'application/json', 'X-API-KEY': os.environ['BOT_API_KEY']}
-    r = requests.post(os.environ['BOT_API_ENDPOINT'], data=payload, headers=headers)
+    r = requests.post(endpoint, data=payload, headers=headers)
 
     r.raise_for_status()
     j = r.json()
@@ -77,18 +97,24 @@ def shorten_backtick_blocks(text: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('input_file', type=str, default=None)
+    parser.add_argument('query_file', type=str, default=None)
+    parser.add_argument('--instructions', type=str, required=True)
+    parser.add_argument('--behavior', type=str, required=True)
     args = parser.parse_args()
 
     text_reducing_heuristics = (shorten_backtick_blocks,)
 
-    if args.input_file:
-        with open(args.input_file, 'r', encoding='utf-8') as f:
-            input_text = f.read()
+    if args.query_file:
+        with (
+            open(args.query_file, encoding='utf-8') as q,
+            open(args.instructions, encoding='utf-8') as inst,
+            open(args.behavior, encoding='utf-8') as behav,
+        ):
+            input_text = q.read()
             if len(input_text) > QUERY_LIMIT:
                 for heuristic in text_reducing_heuristics:
                     input_text = heuristic(input_text)
-            print(get_suggestion(input_text))
+            print(get_suggestion(input_text, inst.read(), behav.read()))
 
 
 if __name__ == '__main__':
