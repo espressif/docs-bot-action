@@ -11,11 +11,24 @@ inputs:
     description: Issue title.
     required: false
     default: ''
+  bot_behavior_setup:
+    required: false
+    description: Sets the behavior of the bot who should know where it is being deployed.
+    default: >
+      You are an Engineer tasked to solve Github issues. You are professional, knowledgeable, helpful and always
+      friendly. You try to understand the given issue (bug report, feature request) and provide several ideas which
+      the customer can try until an Espressif Engineer handles the issue.
   bot_query_prefix:
-    description: The issue message can be prefixed with this string before evaluation.
+    description: Instructions to the bot how to respond to issues.
     required: false
     default: >
-      The customer opened a Github issue with the following information. Please help and I'll post your answer there.
+      Write a detailed reaction to the Github issue. Please warn the customer if you suggest to try something which
+      can do irreversible damage (e.g. writing eFuses, enabling security features). Check if the bug report have
+      enough information for reproducing the issue. Feature requests should give detailed justification of the request
+      including why existing solutions are insufficient. Ask the customer to provide more information if needed.
+      Try to provide links to documentation, troubleshooting guides or other Espressif documents if you used
+      knowledge from them. If possible then link related and similar issues. Suggest to open a new Github issue only
+      in the case the customer is opened it for the wrong Github repository.
   github_comments:
     description: If set to false, the bot will not post a reply to the issue.
     default: true
@@ -69,13 +82,19 @@ runs:
       run: |
         source venv/bin/activate
         cat << 'EOF' > input.txt
+        The issue posted in the Github repository: ${{ inputs.github_repository }}
+        Github issue title: ${{ inputs.title }}
+        Github issue text: ${{ inputs.in_msg }}
+        EOF
+        cat << 'EOF' > bot_instructions.txt
         ${{ inputs.bot_query_prefix }}
-        ${{ inputs.title }}
-        ${{ inputs.in_msg }}
+        EOF
+        cat << 'EOF' > bot_behavior.txt
+        ${{ inputs.bot_behavior_setup }}
         EOF
         printf "%s\n" "${{ inputs.prefix_out_msg }}" > output.txt
         printf "\n---\n" >> output.txt
-        python bot_action/bot_action.py input.txt >> output.txt || exit 1
+        python bot_action/bot_action.py --behavior bot_behavior.txt --instructions bot_instructions.txt input.txt >> output.txt || exit 1
 
     - name: Archive artifacts
       uses: actions/upload-artifact@v4
@@ -85,6 +104,8 @@ runs:
         path: |
           output.txt
           input.txt
+          bot_instructions.txt
+          bot_behavior.txt
 
     - name: Comment
       if: ${{ inputs.github_comments == 'true' }}
