@@ -66,15 +66,16 @@ runs:
     - name: Run bot_action.py
       shell: bash
       id: bot-action
+      env:
+        INPUT_BOT_QUERY_PREFIX: ${{ inputs.bot_query_prefix }}
+        INPUT_TITLE: ${{ inputs.title }}
+        INPUT_IN_MSG: ${{ inputs.in_msg }}
+        INPUT_PREFIX_OUT_MSG: ${{ inputs.prefix_out_msg }}
       run: |
         source venv/bin/activate
-        cat << 'EOF' > input.txt
-        ${{ inputs.bot_query_prefix }}
-        ${{ inputs.title }}
-        ${{ inputs.in_msg }}
-        EOF
-        printf "%s\n" "${{ inputs.prefix_out_msg }}" > output.txt
-        printf "\n---\n" >> output.txt
+        printf '%s\n%s\n%s\n' "$INPUT_BOT_QUERY_PREFIX" "$INPUT_TITLE" "$INPUT_IN_MSG" > input.txt
+        printf '%s\n' "$INPUT_PREFIX_OUT_MSG" > output.txt
+        printf '\n---\n' >> output.txt
         python bot_action/bot_action.py input.txt >> output.txt || exit 1
 
     - name: Archive artifacts
@@ -89,10 +90,11 @@ runs:
     - name: Comment
       if: ${{ inputs.github_comments == 'true' }}
       shell: bash
-      run: |
-        # --edit-last will fail if there is no previous comment by the bot. See https://github.com/cli/cli/issues/10370
-        gh issue comment ${{ inputs.github_issue_number }} --body-file output.txt --edit-last || \
-        gh issue comment ${{ inputs.github_issue_number }} --body-file output.txt
       env:
         GH_TOKEN: ${{ inputs.github_token }}
         GH_REPO: ${{ inputs.github_repository }}
+        ISSUE_NUMBER: ${{ inputs.github_issue_number }}
+      run: |-
+        # --edit-last will fail if there is no previous comment by the bot. See https://github.com/cli/cli/issues/10370
+        gh issue comment "$ISSUE_NUMBER" --body-file output.txt --edit-last || \
+        gh issue comment "$ISSUE_NUMBER" --body-file output.txt
