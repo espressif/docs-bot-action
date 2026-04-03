@@ -71,9 +71,16 @@ runs:
         INPUT_TITLE: ${{ inputs.title }}
         INPUT_IN_MSG: ${{ inputs.in_msg }}
         INPUT_PREFIX_OUT_MSG: ${{ inputs.prefix_out_msg }}
+        INPUT_GITHUB_REPOSITORY: ${{ inputs.github_repository }}
+        INPUT_ISSUE_NUMBER: ${{ inputs.github_issue_number }}
       run: |
         source venv/bin/activate
-        printf '%s\n%s\n%s\n' "$INPUT_BOT_QUERY_PREFIX" "$INPUT_TITLE" "$INPUT_IN_MSG" > input.txt
+        if [ -n "$INPUT_GITHUB_REPOSITORY" ] && [ -n "$INPUT_ISSUE_NUMBER" ]; then
+          GITHUB_LINK="https://github.com/${INPUT_GITHUB_REPOSITORY}/issues/${INPUT_ISSUE_NUMBER}"
+        else
+          GITHUB_LINK="N/A"
+        fi
+        printf '%s\nIssue asked at: %s\nIssue title: %s\nIssue body:\n%s\n' "$INPUT_BOT_QUERY_PREFIX" "$GITHUB_LINK" "$INPUT_TITLE" "$INPUT_IN_MSG" > input.txt
         printf '%s\n' "$INPUT_PREFIX_OUT_MSG" > output.txt
         printf '\n---\n' >> output.txt
         python bot_action/bot_action.py input.txt >> output.txt || exit 1
