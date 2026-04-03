@@ -11,11 +11,11 @@ import re
 import requests
 
 """
-There is a hard bot query limit of 15000 characters. Above this the query will be rejected by the server. It is not
+There is a hard bot query limit of 25000 characters. Above this the query will be rejected by the server. It is not
 possible to increase it or work around the limit. The following limit is smaller in order to account for the JSON
 request overhead.
 """
-QUERY_LIMIT = 14000
+QUERY_LIMIT = 24000
 
 
 def get_suggestion(issue_body: str) -> str:
